@@ -22,16 +22,17 @@
             --horse-bg: #333;
         }
         body {
-            font-family: Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
+     font-family: Arial, sans-serif;
+     background-color: var(--bg-color);
+     color: var(--text-color);
+     margin: 0;
+     padding: 20px;
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     box-sizing: border-box;
+     transition: all 0.3s ease;
+}
         .neo-box {
             background: var(--bg-color);
             border-radius: 10px;
@@ -40,12 +41,32 @@
             margin: 10px 0;
         }
         #balance {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            font-size: 18px;
-            font-weight: bold;
-        }
+    right: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    background-color: var(--bg-color);
+    padding: 5px 10px;
+    border-radius: 5px;
+    box-shadow: var(--box-shadow);
+}
+
+#balance, #darkModeToggle, #backButton {
+    position: fixed;
+    z-index: 10; /* Assurez-vous qu'ils soient au-dessus du plateau */
+    top: 20px;
+}
+
+#raceTrack {
+    width: 90vw;
+    max-width: 600px;
+    height: 300px;
+    margin-top: 80px; /* Assurez-vous que le plateau ne chevauche pas les éléments fixes */
+    position: relative;
+    overflow: hidden;
+    background: var(--track-color);
+    z-index: 1; /* Assurez-vous qu'il est en dessous des éléments fixes */
+}
+
        #darkModeToggle, #backButton {
             position: fixed;
             top: 20px;
@@ -153,9 +174,13 @@
             100% { transform: translateY(100vh) rotate(360deg); }
         }
         @media (max-width: 600px) {
-            #raceTrack {
-                height: 200px;
+            body {
+                padding: 120px 1px 1px 1px;
             }
+            #raceTrack {
+        height: 200px;
+        margin-top: 120px;
+    }
             .horse {
                 font-size: 1.5em;
                 width: 30px;
@@ -178,7 +203,11 @@
                 font-size: 0.9em;
                 padding: 8px;
                 margin: 5px;
+                
             }
+            #balance, #darkModeToggle, #backButton {
+        font-size: 16px;
+    }
         }
     </style>
 </head>
