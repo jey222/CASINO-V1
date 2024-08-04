@@ -94,6 +94,15 @@
         }
         #darkModeToggle { left: 20px; }
         #backButton { left: 70px; }
+        #betAmount {
+            width: 80px;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid var(--text-color);
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
         @media (max-width: 600px) {
             .slot-machine {
                 width: 90%;
@@ -109,6 +118,10 @@
                 padding: 10px 20px;
                 font-size: 16px;
             }
+            #betAmount {
+                width: 60px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
@@ -122,6 +135,7 @@
             <div class="reel" id="reel2">🍋</div>
             <div class="reel" id="reel3">🍇</div>
         </div>
+        <input type="number" id="betAmount" min="1" value="10">
         <button id="spinButton">SPIN</button>
         <div id="result"></div>
     </div>
@@ -132,6 +146,7 @@
         const spinButton = document.getElementById('spinButton');
         const result = document.getElementById('result');
         const balanceDisplay = document.getElementById('balance');
+        const betAmountInput = document.getElementById('betAmount');
         let balance = parseInt(localStorage.getItem('balance')) || 100;
 
         function updateBalance() {
@@ -140,12 +155,19 @@
         }
 
         function spin() {
-            if (balance < 10) {
+            const betAmount = parseInt(betAmountInput.value);
+
+            if (isNaN(betAmount) || betAmount <= 0 || betAmount > balance) {
+                result.textContent = "Veuillez entrer un montant de mise valide.";
+                return;
+            }
+
+            if (balance < betAmount) {
                 result.textContent = "Plus assez de crédits !";
                 return;
             }
 
-            balance -= 10;
+            balance -= betAmount;
             updateBalance();
             spinButton.disabled = true;
             result.textContent = "Bonne chance !";
