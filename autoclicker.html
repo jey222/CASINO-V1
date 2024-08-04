@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autoclicker</title>
+    <style>
+        :root {
+            --bg-color: #e0e5ec;
+            --text-color: #333;
+            --box-shadow: 5px 5px 10px #a3b1c6, -5px -5px 10px #ffffff;
+            --inset-shadow: inset 5px 5px 10px #a3b1c6, inset -5px -5px 10px #ffffff;
+        }
+        .dark-mode {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --box-shadow: 5px 5px 10px #0a0a0a, -5px -5px 10px #1e1e1e;
+            --inset-shadow: inset 5px 5px 10px #0a0a0a, inset -5px -5px 10px #1e1e1e;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        .neo-box {
+            background: var(--bg-color);
+            border-radius: 10px;
+            box-shadow: var(--box-shadow);
+            padding: 20px;
+            margin: 10px 0;
+        }
+        #balance, #darkModeToggle, #backButton {
+            position: fixed;
+            z-index: 10;
+            top: 20px;
+        }
+        #balance {
+            right: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: var(--bg-color);
+            padding: 5px 10px;
+            border-radius: 5px;
+            box-shadow: var(--box-shadow);
+        }
+        #darkModeToggle, #backButton {
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+        #darkModeToggle { left: 20px; }
+        #backButton { left: 70px; }
+        #gameArea {
+            margin-top: 80px;
+            width: 90vw;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        button {
+            margin: 10px;
+            padding: 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+            background: var(--bg-color);
+            box-shadow: var(--box-shadow);
+            color: var(--text-color);
+            cursor: pointer;
+        }
+        button:hover {
+            box-shadow: var(--inset-shadow);
+        }
+        #shopButton {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 100;
+        }
+        #shop {
+    position: fixed;
+    right: -100%; /* Complètement hors de l'écran */
+    top: 0;
+    bottom: 0;
+    width: 300px;
+    max-width: 100%; /* Pour s'assurer qu'il ne dépasse pas sur les petits écrans */
+    background-color: var(--bg-color);
+    box-shadow: var(--box-shadow);
+    transition: right 0.3s ease;
+    overflow-y: auto;
+    padding: 20px;
+    z-index: 1000;
+    box-sizing: border-box; /* Pour inclure le padding dans la largeur */
+}
+
+.shop-open #shop {
+    right: 0;
+}
+        .upgrade {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: var(--bg-color);
+            border-radius: 5px;
+            box-shadow: var(--box-shadow);
+        }
+        #closeShop {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+        .confetti {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            animation: fall linear;
+        }
+        @keyframes fall {
+            0% { transform: translateY(-100vh) rotate(0deg); }
+            100% { transform: translateY(100vh) rotate(360deg); }
+        }
+        @media (max-width: 600px) {
+    #shop {
+        width: 100%; /* Prend toute la largeur sur mobile */
+    }
+    body.shop-open {
+        overflow: hidden; /* Empêche le défilement du body quand le shop est ouvert */
+    } 
+    #balance {
+        z-index: 1001; /* S'assure que le solde est toujours visible */
+    }
+}
+            body {
+                padding: 120px 10px 10px 10px;
+            }
+            #gameArea {
+                margin-top: 0;
+            }
+            #balance, #darkModeToggle, #backButton {
+                font-size: 16px;
+            }
+            #shop {
+                width: 100%;
+                right: -100%;
+            }
+    </style>
+</head>
+<body>
+    <button id="darkModeToggle">🌙</button>
+    <button id="backButton">↩️</button>
+    <div id="balance" class="neo-box">💰 Solde: $100</div>
+    <div id="lowBalanceNotif" class="neo-box" style="display: none; background-color: #ff4757; color: white; position: fixed; top: 70px; right: 20px; padding: 10px; z-index: 1000;">
+        Attention ! Vous n'avez plus beaucoup d'argent.
+    </div>
+    <div id="gameArea" class="neo-box">
+        <h2>Autoclicker</h2>
+        <p>Coins: <span id="coinDisplay">0</span></p>
+        <button id="clickButton">Click Me!</button>
+        <button id="convertCoins">Convertir en $</button>
+    </div>
+    <button id="shopButton">🛒 Shop</button>
+    <div id="shop">
+        <button id="closeShop">❌</button>
+        <h2>Shop</h2>
+        <div id="upgradeArea"></div>
+        <div id="shopOverlay"></div>
+    </div>
+
+    <script>
+        let balance = parseInt(localStorage.getItem('balance')) || 100;
+        let coins = parseInt(localStorage.getItem('autoclicker_coins')) || 0;
+        let clickValue = parseInt(localStorage.getItem('autoclicker_clickValue')) || 1;
+        let upgrades = JSON.parse(localStorage.getItem('autoclicker_upgrades')) || [
+            { name: "Upgrade 1", cost: 50, value: 5, bought: false },
+            { name: "Upgrade 2", cost: 200, value: 10, bought: false },
+            { name: "Upgrade 3", cost: 1000, value: 50, bought: false },
+        ];
+
+        function updateBalance() {
+            document.getElementById('balance').textContent = `💰 Solde: $${balance}`;
+            localStorage.setItem('balance', balance);
+            
+            const lowBalanceNotif = document.getElementById('lowBalanceNotif');
+            if (balance <= 20) {
+                lowBalanceNotif.style.display = 'block';
+                setTimeout(() => {
+                    lowBalanceNotif.style.display = 'none';
+                }, 5000);
+            } else {
+                lowBalanceNotif.style.display = 'none';
+            }
+        }
+
+        function updateCoins() {
+            document.getElementById('coinDisplay').textContent = coins;
+            localStorage.setItem('autoclicker_coins', coins);
+        }
+
+        function click() {
+            coins += clickValue;
+            updateCoins();
+        }
+
+        function buyUpgrade(index) {
+            const upgrade = upgrades[index];
+            if (coins >= upgrade.cost && !upgrade.bought) {
+                coins -= upgrade.cost;
+                clickValue += upgrade.value;
+                upgrade.bought = true;
+                localStorage.setItem('autoclicker_clickValue', clickValue);
+                localStorage.setItem('autoclicker_upgrades', JSON.stringify(upgrades));
+                updateCoins();
+                updateShop();
+            } else if (upgrade.bought) {
+                alert("Amélioration déjà achetée!");
+            } else {
+                alert("Pas assez de coins!");
+            }
+        }
+
+        function convertCoins() {
+            const dollarsToAdd = Math.floor(coins / 10000);
+            if (dollarsToAdd > 0) {
+                balance += dollarsToAdd;
+                coins -= dollarsToAdd * 10000;
+                updateBalance();
+                updateCoins();
+                alert(`Vous avez converti ${dollarsToAdd * 10000} coins en $${dollarsToAdd}`);
+                createConfetti(['💰', '💵', '🤑', '💲'], 50);
+            } else {
+                alert("Vous avez besoin d'au moins 10000 coins pour convertir en $1");
+            }
+        }
+
+        function createConfetti(emojis, count) {
+            for (let i = 0; i < count; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                confetti.style.left = `${Math.random() * 100}vw`;
+                confetti.style.fontSize = `${Math.random() * 20 + 10}px`;
+                confetti.style.animationDuration = `${Math.random() * 3 + 2}s`;
+                document.body.appendChild(confetti);
+
+                confetti.addEventListener('animationend', () => {
+                    confetti.remove();
+                });
+            }
+        }
+
+        function updateShop() {
+            const upgradeArea = document.getElementById('upgradeArea');
+            upgradeArea.innerHTML = '';
+            upgrades.forEach((upgrade, index) => {
+                const upgradeElement = document.createElement('div');
+                upgradeElement.className = 'upgrade';
+                upgradeElement.innerHTML = `
+                    <h3>${upgrade.name}</h3>
+                    <p>Coût: ${upgrade.cost} coins</p>
+                    <p>Valeur: +${upgrade.value} par clic</p>
+                    <button onclick="buyUpgrade(${index})" ${upgrade.bought ? 'disabled' : ''}>
+                        ${upgrade.bought ? 'Acheté' : 'Acheter'}
+                    </button>
+                `;
+                upgradeArea.appendChild(upgradeElement);
+            });
+        }
+
+        document.getElementById('clickButton').addEventListener('click', click);
+        document.getElementById('convertCoins').addEventListener('click', convertCoins);
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            darkModeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+
+        document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+        document.getElementById('backButton').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+
+        function toggleShop() {
+            document.body.classList.toggle('shop-open');
+        }
+
+        document.getElementById('shopButton').addEventListener('click', toggleShop);
+        document.getElementById('closeShop').addEventListener('click', toggleShop);
+        document.getElementById('shopOverlay').addEventListener('click', toggleShop);
+
+        // Load dark mode setting
+        if (localStorage.getItem('darkMode') === 'true') {
+            toggleDarkMode();
+        }
+
+        // Initialize game state
+        updateBalance();
+        updateCoins();
+        updateShop();
+    </script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LUX</title>
+    <title>Le Lux</title>
     <style>
         :root {
             --bg-color: #e0e5ec;
@@ -69,7 +69,21 @@
             font-size: 18px;
             font-weight: bold;
         }
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 10px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 0.8em;
+        }
         @media (max-width: 600px) {
+            body {
+                padding-top: 60px;
+            }
             .container {
                 flex-direction: column;
                 align-items: center;
@@ -77,13 +91,17 @@
             .game-card {
                 width: 80%;
             }
+            #darkModeToggle, #balance {
+                font-size: 18px;
+            }
         }
     </style>
 </head>
 <body>
     <button id="darkModeToggle">🌙</button>
     <div id="balance">💰 Solde: $100</div>
-    <h1>    </h1>
+    <h1>Le Lux</h1>
+    <h2>Casino fictif en ligne</h2>
     <div class="container">
         <div class="game-card" onclick="location.href='horse-race.html'">
             <div class="game-icon">🐎</div>
@@ -93,7 +111,12 @@
             <div class="game-icon">🎰</div>
             <h2>Machine à Sous</h2>
         </div>
+        <div class="game-card" onclick="location.href='autoclicker.html'">
+            <div class="game-icon">🖱️</div>
+            <h2>Autoclicker</h2>
+        </div>
     </div>
+    <footer>Créé par 99jey - Tous droits réservés</footer>
 
     <script>
         let balance = 100;
@@ -101,11 +124,22 @@
         const balanceDisplay = document.getElementById('balance');
 
         function updateBalance() {
-            balanceDisplay.textContent = `💰 Solde: $${balance}`;
-            localStorage.setItem('balance', balance);
-        }
+    document.getElementById('balance').textContent = `💰 Solde: $${balance}`;
+    localStorage.setItem('balance', balance);
+    
+    // Vérifier si le solde est bas et afficher la notification
+    const lowBalanceNotif = document.getElementById('lowBalanceNotif');
+    if (balance <= 20) {
+        lowBalanceNotif.style.display = 'block';
+        setTimeout(() => {
+            lowBalanceNotif.style.display = 'none';
+        }, 5000); // La notification disparaît après 5 secondes
+    } else {
+        lowBalanceNotif.style.display = 'none';
+    }
+}
 
-        function toggleDarkMode() {
+            function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
             darkModeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
@@ -119,6 +153,10 @@
         if (localStorage.getItem('darkMode') === 'true') {
             toggleDarkMode();
         }
+
+        document.querySelectorAll('.game-card').forEach(card => {
+            card.addEventListener('click', playClickSound);
+        });
     </script>
 </body>
 </html>

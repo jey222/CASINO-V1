@@ -22,17 +22,28 @@
             --horse-bg: #333;
         }
         body {
-     font-family: Arial, sans-serif;
-     background-color: var(--bg-color);
-     color: var(--text-color);
-     margin: 0;
-     padding: 20px;
-     display: flex;
-     flex-direction: column;
-     align-items: center;
-     box-sizing: border-box;
-     transition: all 0.3s ease;
-}
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            text-align: center;
+            padding: 10px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 0.8em;
+        }
         .neo-box {
             background: var(--bg-color);
             border-radius: 10px;
@@ -41,35 +52,30 @@
             margin: 10px 0;
         }
         #balance {
-    right: 20px;
-    font-size: 18px;
-    font-weight: bold;
-    background-color: var(--bg-color);
-    padding: 5px 10px;
-    border-radius: 5px;
-    box-shadow: var(--box-shadow);
-}
-
-#balance, #darkModeToggle, #backButton {
-    position: fixed;
-    z-index: 10; /* Assurez-vous qu'ils soient au-dessus du plateau */
-    top: 20px;
-}
-
-#raceTrack {
-    width: 90vw;
-    max-width: 600px;
-    height: 300px;
-    margin-top: 80px; /* Assurez-vous que le plateau ne chevauche pas les éléments fixes */
-    position: relative;
-    overflow: hidden;
-    background: var(--track-color);
-    z-index: 1; /* Assurez-vous qu'il est en dessous des éléments fixes */
-}
-
-       #darkModeToggle, #backButton {
+            right: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: var(--bg-color);
+            padding: 5px 10px;
+            border-radius: 5px;
+            box-shadow: var(--box-shadow);
+        }
+        #balance, #darkModeToggle, #backButton {
             position: fixed;
+            z-index: 10;
             top: 20px;
+        }
+        #raceTrack {
+            width: 90vw;
+            max-width: 600px;
+            height: 300px;
+            margin-top: 80px;
+            position: relative;
+            overflow: hidden;
+            background: var(--track-color);
+            z-index: 1;
+        }
+        #darkModeToggle, #backButton {
             font-size: 24px;
             background: none;
             border: none;
@@ -78,14 +84,6 @@
         }
         #darkModeToggle { left: 20px; }
         #backButton { left: 70px; }
-        #raceTrack {
-            width: 90vw;
-            max-width: 600px;
-            height: 300px;
-            position: relative;
-            overflow: hidden;
-            background: var(--track-color);
-        }
         .horse {
             position: absolute;
             font-size: 2em;
@@ -175,39 +173,31 @@
         }
         @media (max-width: 600px) {
             body {
-                padding: 120px 1px 1px 1px;
+                padding: 120px 10px 10px 10px;
             }
             #raceTrack {
-        height: 200px;
-        margin-top: 120px;
-    }
+                height: 200px;
+                margin-top: 0;
+            }
             .horse {
                 font-size: 1.5em;
                 width: 30px;
                 height: 30px;
             }
             #controls {
-                flex-direction: row;
-                flex-wrap: wrap;
-                justify-content: center;
+                flex-direction: column;
+                align-items: center;
             }
-            #horseSelect, #betAmount {
-                width: calc(50% - 10px);
+            #horseSelect, #betAmount, #startRace {
+                width: 90%;
                 max-width: none;
                 font-size: 0.9em;
                 padding: 8px;
-                margin: 5px;
-            }
-            #startRace {
-                width: calc(100% - 10px);
-                font-size: 0.9em;
-                padding: 8px;
-                margin: 5px;
-                
+                margin: 5px 0;
             }
             #balance, #darkModeToggle, #backButton {
-        font-size: 16px;
-    }
+                font-size: 16px;
+            }
         }
     </style>
 </head>
@@ -215,6 +205,9 @@
     <button id="darkModeToggle">🌙</button>
     <button id="backButton">↩️</button>
     <div id="balance" class="neo-box">💰 Solde: $100</div>
+    <div id="lowBalanceNotif" class="neo-box" style="display: none; background-color: #ff4757; color: white; position: fixed; top: 70px; right: 20px; padding: 10px; z-index: 1000;">
+        Attention ! Vous n'avez plus beaucoup d'argent.
+    </div>
     <div id="raceTrack" class="neo-box">
         <div id="result"></div>
         <div id="countdown"></div>
@@ -225,7 +218,8 @@
         <input type="number" id="betAmount" min="1" value="10">
         <button id="startRace">Miser et lancer la course</button>
     </div>
-
+    <footer>Créé par 99jey - Tous droits réservés</footer>
+    
     <script>
         const horses = [
             { emoji: '🐎', color: 'red' },
@@ -238,9 +232,20 @@
         let raceInProgress = false;
 
         function updateBalance() {
-            document.getElementById('balance').textContent = `💰 Solde: $${balance}`;
-            localStorage.setItem('balance', balance);
-        }
+    document.getElementById('balance').textContent = `💰 Solde: $${balance}`;
+    localStorage.setItem('balance', balance);
+    
+    // Vérifier si le solde est bas et afficher la notification
+    const lowBalanceNotif = document.getElementById('lowBalanceNotif');
+    if (balance <= 20) {
+        lowBalanceNotif.style.display = 'block';
+        setTimeout(() => {
+            lowBalanceNotif.style.display = 'none';
+        }, 5000); // La notification disparaît après 5 secondes
+    } else {
+        lowBalanceNotif.style.display = 'none';
+    }
+}
 
         function createRaceTrack() {
             const raceTrack = document.getElementById('raceTrack');
@@ -404,5 +409,7 @@
         // Adjust track size on window resize
         window.addEventListener('resize', createRaceTrack);
     </script>
+</body>
+</html>
 </body>
 </html>

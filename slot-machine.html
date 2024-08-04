@@ -94,16 +94,21 @@
         }
         #darkModeToggle { left: 20px; }
         #backButton { left: 70px; }
-        #betAmount {
-            width: 80px;
-            padding: 10px;
-            font-size: 16px;
-            border: 2px solid var(--text-color);
-            border-radius: 5px;
-            margin: 10px 0;
+        footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             text-align: center;
+            padding: 10px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 0.8em;
         }
         @media (max-width: 600px) {
+            body {
+                padding-top: 60px;
+            }
             .slot-machine {
                 width: 90%;
                 padding: 15px;
@@ -118,9 +123,8 @@
                 padding: 10px 20px;
                 font-size: 16px;
             }
-            #betAmount {
-                width: 60px;
-                font-size: 14px;
+            #darkModeToggle, #backButton, #balance {
+                font-size: 18px;
             }
         }
     </style>
@@ -129,16 +133,19 @@
     <button id="darkModeToggle">🌙</button>
     <button id="backButton">↩️</button>
     <div id="balance">💰 Solde: $100</div>
+    <div id="lowBalanceNotif" class="neo-box" style="display: none; background-color: #ff4757; color: white; position: fixed; top: 70px; right: 20px; padding: 10px; z-index: 1000;">
+        Attention ! Vous n'avez plus beaucoup d'argent.
+    </div>
     <div class="slot-machine">
         <div class="reels">
             <div class="reel" id="reel1">🍒</div>
             <div class="reel" id="reel2">🍋</div>
             <div class="reel" id="reel3">🍇</div>
         </div>
-        <input type="number" id="betAmount" min="1" value="10">
         <button id="spinButton">SPIN</button>
         <div id="result"></div>
     </div>
+    <footer>Créé par 99jey - Tous droits réservés</footer>
 
     <script>
         const symbols = ['🍒', '🍋', '🍇', '🍊', '🔔', '💎', '7️⃣', '🍀'];
@@ -146,22 +153,26 @@
         const spinButton = document.getElementById('spinButton');
         const result = document.getElementById('result');
         const balanceDisplay = document.getElementById('balance');
-        const betAmountInput = document.getElementById('betAmount');
         let balance = parseInt(localStorage.getItem('balance')) || 100;
 
         function updateBalance() {
-            balanceDisplay.textContent = `💰 Solde: $${balance}`;
-            localStorage.setItem('balance', balance);
-        }
+    document.getElementById('balance').textContent = `💰 Solde: $${balance}`;
+    localStorage.setItem('balance', balance);
+    
+    // Vérifier si le solde est bas et afficher la notification
+    const lowBalanceNotif = document.getElementById('lowBalanceNotif');
+    if (balance <= 20) {
+        lowBalanceNotif.style.display = 'block';
+        setTimeout(() => {
+            lowBalanceNotif.style.display = 'none';
+        }, 5000); // La notification disparaît après 5 secondes
+    } else {
+        lowBalanceNotif.style.display = 'none';
+    }
+}
 
         function spin() {
-            const betAmount = parseInt(betAmountInput.value);
-
-            if (isNaN(betAmount) || betAmount <= 0 || betAmount > balance) {
-                result.textContent = "Veuillez entrer un montant de mise valide.";
-                return;
-            }
-
+            const betAmount = 10; // Montant fixe par spin
             if (balance < betAmount) {
                 result.textContent = "Plus assez de crédits !";
                 return;
@@ -190,23 +201,27 @@
                 }));
             });
 
-            Promise.all(spins).then(checkResult);
+            Promise.all(spins).then(() => checkResult(betAmount));
         }
 
-        function checkResult() {
+        function checkResult(betAmount) {
             const finalSymbols = Array.from(reels).map(reel => reel.textContent);
             
             if (finalSymbols.every(symbol => symbol === finalSymbols[0])) {
-                let winAmount = 100;
-                if (finalSymbols[0] === '💎') winAmount = 500;
-                if (finalSymbols[0] === '7️⃣') winAmount = 1000;
+                let winAmount = betAmount * 10;
+                if (finalSymbols[0] === '💎') winAmount = betAmount * 50;
+                if (finalSymbols[0] === '7️⃣') winAmount = betAmount * 100;
                 balance += winAmount;
                 result.textContent = `Jackpot ! Vous gagnez ${winAmount} crédits !`;
+                playWinSound();
             } else if (finalSymbols[0] === finalSymbols[1] || finalSymbols[1] === finalSymbols[2]) {
-                balance += 20;
-                result.textContent = "Petit gain ! Vous gagnez 20 crédits !";
+                let winAmount = betAmount * 2;
+                balance += winAmount;
+                result.textContent = `Petit gain ! Vous gagnez ${winAmount} crédits !`;
+                playWinSound();
             } else {
                 result.textContent = "Pas de chance, réessayez !";
+                playLoseSound();
             }
 
             updateBalance();
@@ -217,6 +232,16 @@
             document.body.classList.toggle('dark-mode');
             darkModeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+
+        function playWinSound() {
+            const winSound = new Audio('win.mp3');
+            winSound.play();
+        }
+
+        function playLoseSound() {
+            const loseSound = new Audio('lose.mp3');
+            loseSound.play();
         }
 
         spinButton.addEventListener('click', spin);
