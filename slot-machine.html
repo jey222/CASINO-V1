@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine à Sous</title>
+    <style>
+        :root {
+            --bg-color: #e0e5ec;
+            --text-color: #333;
+            --box-shadow: 5px 5px 10px #a3b1c6, -5px -5px 10px #ffffff;
+            --inset-shadow: inset 5px 5px 10px #a3b1c6, inset -5px -5px 10px #ffffff;
+        }
+        .dark-mode {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --box-shadow: 5px 5px 10px #0a0a0a, -5px -5px 10px #1e1e1e;
+            --inset-shadow: inset 5px 5px 10px #0a0a0a, inset -5px -5px 10px #1e1e1e;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            transition: all 0.3s ease;
+        }
+        .slot-machine {
+            background-color: var(--bg-color);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--box-shadow);
+            text-align: center;
+        }
+        .reels {
+            display: flex;
+            justify-content: space-around;
+            background-color: var(--bg-color);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: var(--inset-shadow);
+        }
+        .reel {
+            font-size: 50px;
+            width: 80px;
+            height: 80px;
+            line-height: 80px;
+            text-align: center;
+            border: 2px solid var(--text-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        #spinButton {
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 50px;
+            background-color: #ff4757;
+            color: white;
+            cursor: pointer;
+            box-shadow: var(--box-shadow);
+            transition: all 0.2s ease;
+        }
+        #spinButton:hover {
+            background-color: #ff6b6b;
+        }
+        #spinButton:active {
+            box-shadow: var(--inset-shadow);
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #balance {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        #darkModeToggle, #backButton {
+            position: fixed;
+            top: 20px;
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+        #darkModeToggle { left: 20px; }
+        #backButton { left: 70px; }
+        @media (max-width: 600px) {
+            .slot-machine {
+                width: 90%;
+                padding: 15px;
+            }
+            .reel {
+                font-size: 40px;
+                width: 60px;
+                height: 60px;
+                line-height: 60px;
+            }
+            #spinButton {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button id="darkModeToggle">🌙</button>
+    <button id="backButton">↩️</button>
+    <div id="balance">💰 Solde: $100</div>
+    <div class="slot-machine">
+        <div class="reels">
+            <div class="reel" id="reel1">🍒</div>
+            <div class="reel" id="reel2">🍋</div>
+            <div class="reel" id="reel3">🍇</div>
+        </div>
+        <button id="spinButton">SPIN</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const symbols = ['🍒', '🍋', '🍇', '🍊', '🔔', '💎', '7️⃣', '🍀'];
+        const reels = document.querySelectorAll('.reel');
+        const spinButton = document.getElementById('spinButton');
+        const result = document.getElementById('result');
+        const balanceDisplay = document.getElementById('balance');
+        let balance = parseInt(localStorage.getItem('balance')) || 100;
+
+        function updateBalance() {
+            balanceDisplay.textContent = `💰 Solde: $${balance}`;
+            localStorage.setItem('balance', balance);
+        }
+
+        function spin() {
+            if (balance < 10) {
+                result.textContent = "Plus assez de crédits !";
+                return;
+            }
+
+            balance -= 10;
+            updateBalance();
+            spinButton.disabled = true;
+            result.textContent = "Bonne chance !";
+
+            let spins = [];
+
+            reels.forEach((reel, index) => {
+                let symbolsCount = 30;
+                let duration = 100 * symbolsCount + index * 150;
+                
+                spins.push(new Promise(resolve => {
+                    let count = 0;
+                    let spinInterval = setInterval(() => {
+                        reel.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                        if (++count === symbolsCount) {
+                            clearInterval(spinInterval);
+                            resolve();
+                        }
+                    }, 100);
+                }));
+            });
+
+            Promise.all(spins).then(checkResult);
+        }
+
+        function checkResult() {
+            const finalSymbols = Array.from(reels).map(reel => reel.textContent);
+            
+            if (finalSymbols.every(symbol => symbol === finalSymbols[0])) {
+                let winAmount = 100;
+                if (finalSymbols[0] === '💎') winAmount = 500;
+                if (finalSymbols[0] === '7️⃣') winAmount = 1000;
+                balance += winAmount;
+                result.textContent = `Jackpot ! Vous gagnez ${winAmount} crédits !`;
+            } else if (finalSymbols[0] === finalSymbols[1] || finalSymbols[1] === finalSymbols[2]) {
+                balance += 20;
+                result.textContent = "Petit gain ! Vous gagnez 20 crédits !";
+            } else {
+                result.textContent = "Pas de chance, réessayez !";
+            }
+
+            updateBalance();
+            spinButton.disabled = false;
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            darkModeToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️' : '🌙';
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+        }
+
+        spinButton.addEventListener('click', spin);
+        document.getElementById('darkModeToggle').addEventListener('click', toggleDarkMode);
+        document.getElementById('backButton').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+
+        // Load dark mode setting
+        if (localStorage.getItem('darkMode') === 'true') {
+            toggleDarkMode();
+        }
+
+        updateBalance();
+    </script>
+</body>
+</html>
